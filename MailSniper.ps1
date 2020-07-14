@@ -2767,9 +2767,11 @@ function Invoke-OpenInboxFinder{
   #If the -Remote flag was passed prompt for the user's domain credentials.
   if ($Remote)
   {
-    $remotecred = Get-Credential
+    #$remotecred = Get-Credential
     $service.UseDefaultCredentials = $false
-    $service.Credentials = $remotecred.GetNetworkCredential()
+    # Hardcode credential for less prompts
+    $service.Credentials = New-Object System.Net.NetworkCredential("victimdomain\PentesterAccount","PentesterPass")
+    #$service.Credentials = $remotecred.GetNetworkCredential()
   }
   else
   {
@@ -2906,7 +2908,8 @@ function Invoke-OpenInboxFinder{
         $PropSet = New-Object Microsoft.Exchange.WebServices.Data.PropertySet([Microsoft.Exchange.WebServices.Data.BasePropertySet]::FirstClassProperties)
         $PropSet.Add([Microsoft.Exchange.WebServices.Data.FolderSchema]::Permissions)
         $Inbox = [Microsoft.Exchange.WebServices.Data.Folder]::Bind($service,$msgfolderroot,$PropSet)
-        $ItemView = New-Object Microsoft.Exchange.WebServices.Data.ItemView(1)
+	# Get 10 Emails
+        $ItemView = New-Object Microsoft.Exchange.WebServices.Data.ItemView(10)
 
         try
         {
@@ -2934,9 +2937,13 @@ function Invoke-OpenInboxFinder{
                     }
                 }
             }
-            Write-Output ("Subject of latest email in inbox: " + $Item.Subject)
-            
-            
+	    # Get the OWA direct Email URLs
+            foreach ($foo in $Item)
+            {
+                Write-Output ("Subject ($mbx): " + $foo.Subject + "`n`rDirect URL:`n`rhttps://$ExchHostname/owa/" + $foo.WebClientReadFormQueryString)
+                Write-Output ("`n`r")
+            }
+	    
             $OpenMailboxes += $mbx
         }
         catch
